@@ -1,0 +1,2099 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#12233b">
+<title>Vehicle Inspection Report</title>
+<style>
+  :root {
+    --navy: #12233b;
+    --navy-soft: #1d3557;
+    --accent: #2f6fed;
+    --accent-soft: #eaf1fe;
+    --green: #1e7a3c;
+    --green-bg: #e7f5ec;
+    --yellow: #c98a00;
+    --yellow-bg: #fff6e0;
+    --red: #c0261f;
+    --red-bg: #fdeceb;
+    --ink: #17181c;
+    --ink-soft: #6a6f78;
+    --ink-faint: #9aa0a8;
+    --line: #e3e6ea;
+    --bg: #f2f4f7;
+    --card: #ffffff;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  #app { max-width: 620px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; }
+
+  /* ---------- Header ---------- */
+  header.topbar {
+    position: sticky; top: 0; z-index: 20; background: var(--navy); color: #fff;
+    padding-top: env(safe-area-inset-top, 0);
+    box-shadow: 0 1px 0 rgba(0,0,0,0.06);
+  }
+  .brandbar { display: flex; align-items: center; gap: 10px; padding: 12px 16px 10px; }
+  .brand-mark {
+    width: 34px; height: 34px; border-radius: 8px; background: #fff; color: var(--navy);
+    display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px;
+    flex-shrink: 0; letter-spacing: -0.5px;
+  }
+  .brand-text { flex: 1; min-width: 0; }
+  .brand-name {
+    font-size: 15px; font-weight: 700; line-height: 1.2; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis;
+  }
+  .brand-sub { font-size: 11px; color: #a9bcd6; letter-spacing: 0.4px; text-transform: uppercase; margin-top: 1px; }
+  .gear {
+    background: rgba(255,255,255,0.12); border: none; color: #fff; width: 34px; height: 34px;
+    border-radius: 8px; font-size: 15px; cursor: pointer; flex-shrink: 0;
+  }
+  .back-btn {
+    background: rgba(255,255,255,0.12); border: none; color: #fff; padding: 7px 12px;
+    border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;
+  }
+  nav.tabs { display: flex; padding: 0 12px; gap: 2px; }
+  nav.tabs button {
+    flex: 1; padding: 11px 6px 12px; border: none; background: transparent; color: #9fb3cd;
+    font-size: 13.5px; font-weight: 600; cursor: pointer; border-bottom: 3px solid transparent;
+  }
+  nav.tabs button.active { color: #fff; border-bottom-color: var(--accent); }
+
+  main { flex: 1; padding: 14px; padding-bottom: 48px; }
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* ---------- Cards & forms ---------- */
+  .card {
+    background: var(--card); border-radius: var(--radius); padding: 15px;
+    margin-bottom: 12px; border: 1px solid var(--line); box-shadow: 0 1px 2px rgba(16,24,40,0.04);
+  }
+  .card-title {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.7px; text-transform: uppercase;
+    color: var(--ink-faint); margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;
+  }
+  .field { margin-bottom: 12px; }
+  .field:last-child { margin-bottom: 0; }
+  .field-row { display: flex; gap: 10px; }
+  .field-row .field { flex: 1; }
+  label { display: block; font-size: 12.5px; font-weight: 600; color: var(--ink-soft); margin-bottom: 5px; }
+  label .req { color: var(--red); }
+  input[type="text"], input[type="number"], input[type="password"],
+  input[type="datetime-local"], select, textarea {
+    width: 100%; padding: 11px 12px; border-radius: 10px; border: 1px solid var(--line);
+    font-size: 16px; background: #fff; color: var(--ink); font-family: inherit;
+  }
+  input[readonly] { background: #f4f6f8; color: var(--ink-soft); }
+  textarea { resize: vertical; min-height: 70px; }
+  select { appearance: none; -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8'><path d='M1 1l5 5 5-5' stroke='%236a6f78' stroke-width='1.8' fill='none' stroke-linecap='round'/></svg>");
+    background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px;
+  }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .hint { font-size: 11.5px; color: var(--ink-faint); margin-top: 5px; }
+  .invalid { border-color: var(--red) !important; background: #fffafa; }
+
+  /* ---------- Condition selector ---------- */
+  .condition-opts { display: flex; flex-direction: column; gap: 8px; }
+  .cond {
+    display: flex; align-items: center; gap: 10px; padding: 11px 12px; border: 1.5px solid var(--line);
+    border-radius: 11px; cursor: pointer; background: #fff;
+  }
+  .cond .dot { width: 13px; height: 13px; border-radius: 50%; flex-shrink: 0; }
+  .cond .dot.green { background: var(--green); }
+  .cond .dot.yellow { background: var(--yellow); }
+  .cond .dot.red { background: var(--red); }
+  .cond .cond-txt { flex: 1; min-width: 0; }
+  .cond .cond-main { display: block; font-size: 14.5px; font-weight: 650; }
+  .cond .cond-sub { display: block; font-size: 11.5px; color: var(--ink-faint); margin-top: 2px; }
+  .cond.sel-green { border-color: var(--green); background: var(--green-bg); }
+  .cond.sel-yellow { border-color: var(--yellow); background: var(--yellow-bg); }
+  .cond.sel-red { border-color: var(--red); background: var(--red-bg); }
+  .cond .check { font-size: 15px; font-weight: 800; opacity: 0; }
+  .cond.sel-green .check { opacity: 1; color: var(--green); }
+  .cond.sel-yellow .check { opacity: 1; color: var(--yellow); }
+  .cond.sel-red .check { opacity: 1; color: var(--red); }
+
+  /* ---------- Defect rows ---------- */
+  .defect-row {
+    padding: 12px; border: 1px solid var(--line); border-radius: 12px;
+    margin-bottom: 10px; background: #fbfcfd;
+  }
+  .defect-head {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;
+  }
+  .defect-num { font-size: 11px; font-weight: 700; color: var(--ink-faint); letter-spacing: 0.6px; }
+  .defect-row-main { display: flex; gap: 8px; align-items: center; }
+  .defect-row-main input[type="text"] { flex: 1; }
+  .icon-btn {
+    flex-shrink: 0; width: 44px; height: 44px; border-radius: 10px; border: 1px solid var(--line);
+    background: #fff; font-size: 20px; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--accent); font-weight: 600;
+  }
+  .icon-btn.has-photos { border-color: var(--accent); background: var(--accent-soft); }
+  .link-remove {
+    background: none; border: none; color: var(--red); font-size: 12px; font-weight: 600;
+    cursor: pointer; padding: 2px 0;
+  }
+  .thumb-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 9px; }
+  .thumb { position: relative; width: 70px; height: 70px; border-radius: 8px; overflow: hidden; border: 1px solid var(--line); }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .thumb .remove-thumb {
+    position: absolute; top: 2px; right: 2px; background: rgba(0,0,0,0.62); color: #fff; border: none;
+    width: 20px; height: 20px; border-radius: 50%; font-size: 11px; line-height: 1; cursor: pointer;
+  }
+
+  /* ---------- Buttons ---------- */
+  .btn {
+    width: 100%; padding: 14px; border-radius: 12px; border: none; font-size: 16px; font-weight: 700;
+    cursor: pointer; font-family: inherit;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-dark { background: var(--navy); color: #fff; }
+  .btn-outline { background: #fff; color: var(--navy); border: 1.5px solid var(--line); }
+  .btn-green { background: var(--green); color: #fff; }
+  .btn-red { background: var(--red); color: #fff; }
+  .btn-add {
+    width: 100%; padding: 12px; border-radius: 12px; border: 1.5px dashed #c9d2dd; background: transparent;
+    color: var(--accent); font-weight: 650; font-size: 14.5px; cursor: pointer; font-family: inherit;
+  }
+  .btn-row { display: flex; gap: 10px; }
+  .btn-row .btn { margin: 0; }
+  .stack > * + * { margin-top: 10px; }
+
+  /* ---------- Dashboard ---------- */
+  .summary { display: flex; gap: 8px; margin-bottom: 12px; }
+  .stat {
+    flex: 1; background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+    padding: 11px 8px; text-align: center;
+  }
+  .stat .n { font-size: 21px; font-weight: 800; line-height: 1; }
+  .stat .l { font-size: 10.5px; color: var(--ink-faint); margin-top: 4px; font-weight: 600; letter-spacing: 0.3px; text-transform: uppercase; }
+  .stat.green .n { color: var(--green); }
+  .stat.yellow .n { color: var(--yellow); }
+  .stat.red .n { color: var(--red); }
+
+  .filters { display: flex; gap: 7px; margin-bottom: 12px; overflow-x: auto; padding-bottom: 2px; }
+  .chip {
+    flex-shrink: 0; padding: 7px 13px; border-radius: 999px; border: 1px solid var(--line);
+    background: #fff; font-size: 13px; font-weight: 600; color: var(--ink-soft); cursor: pointer; font-family: inherit;
+  }
+  .chip.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+
+  .truck-card {
+    display: flex; align-items: flex-start; gap: 11px; padding: 13px; border-radius: var(--radius);
+    background: var(--card); border: 1px solid var(--line); margin-bottom: 10px; cursor: pointer;
+  }
+  .truck-card.oos { border-left: 4px solid var(--red); }
+  .truck-card.defect { border-left: 4px solid var(--yellow); }
+  .truck-card.ok { border-left: 4px solid var(--green); }
+  .bubble { width: 15px; height: 15px; border-radius: 50%; flex-shrink: 0; margin-top: 3px; }
+  .bubble.green { background: var(--green); }
+  .bubble.yellow { background: var(--yellow); }
+  .bubble.red { background: var(--red); }
+  .truck-info { flex: 1; min-width: 0; }
+  .truck-name-row { display: flex; align-items: baseline; gap: 7px; }
+  .truck-name { font-weight: 700; font-size: 16px; }
+  .defect-count { font-size: 11.5px; color: var(--ink-faint); font-weight: 600; }
+  .status-label { font-size: 12px; font-weight: 700; margin-top: 1px; }
+  .status-label.green { color: var(--green); }
+  .status-label.yellow { color: var(--yellow); }
+  .status-label.red { color: var(--red); }
+  .truck-meta { font-size: 11.5px; color: var(--ink-faint); margin-top: 3px; }
+  .inspector-row { margin-top: 8px; }
+  .inspector-row input {
+    width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line);
+    font-size: 13px; background: #fafbfc;
+  }
+  .chevron { color: var(--ink-faint); font-size: 21px; flex-shrink: 0; align-self: center; }
+
+  /* ---------- Detail ---------- */
+  .detail-hero { text-align: center; }
+  .detail-hero .name { font-size: 23px; font-weight: 800; }
+  .status-pill {
+    display: inline-block; padding: 5px 14px; border-radius: 999px; font-size: 12px; font-weight: 700;
+    margin-top: 9px;
+  }
+  .status-pill.green { background: var(--green-bg); color: var(--green); }
+  .status-pill.yellow { background: var(--yellow-bg); color: #9a6a00; }
+  .status-pill.red { background: var(--red-bg); color: var(--red); }
+
+  .kv { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid #f0f2f5; font-size: 14px; }
+  .kv:last-child { border-bottom: none; }
+  .kv .k { color: var(--ink-soft); font-weight: 600; flex-shrink: 0; }
+  .kv .v { text-align: right; font-weight: 600; }
+
+  .defect-view { padding: 12px 0; border-top: 1px solid var(--line); }
+  .defect-view:first-child { border-top: none; padding-top: 0; }
+  .defect-cat {
+    display: inline-block; font-size: 10.5px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase;
+    background: var(--accent-soft); color: var(--navy-soft); padding: 3px 8px; border-radius: 5px; margin-bottom: 6px;
+  }
+  .defect-view .txt { font-size: 14.5px; margin-bottom: 8px; }
+  .defect-view .photos { display: flex; gap: 8px; flex-wrap: wrap; }
+  .defect-view .photos img {
+    width: 82px; height: 82px; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); cursor: pointer;
+  }
+  .empty { color: var(--ink-faint); font-size: 13.5px; text-align: center; padding: 20px 6px; line-height: 1.5; }
+
+  /* ---------- History ---------- */
+  .hist-item { border-top: 1px solid var(--line); padding: 11px 0; }
+  .hist-item:first-child { border-top: none; padding-top: 0; }
+  .hist-head { display: flex; align-items: center; gap: 9px; cursor: pointer; }
+  .hist-icon {
+    width: 26px; height: 26px; border-radius: 7px; flex-shrink: 0; display: flex; align-items: center;
+    justify-content: center; font-size: 12px; font-weight: 800;
+  }
+  .hist-icon.inspection { background: var(--accent-soft); color: var(--accent); }
+  .hist-icon.repair { background: var(--green-bg); color: var(--green); }
+  .hist-icon.oos { background: var(--red-bg); color: var(--red); }
+  .hist-main { flex: 1; min-width: 0; }
+  .hist-title { font-size: 14px; font-weight: 650; }
+  .hist-title.alert { color: var(--red); }
+  .hist-sub { font-size: 11.5px; color: var(--ink-faint); margin-top: 1px; }
+  .hist-body { padding: 9px 0 2px 35px; font-size: 13px; color: var(--ink-soft); display: none; }
+  .hist-item.open .hist-body { display: block; }
+  .hist-body ul { margin: 4px 0 0; padding-left: 17px; }
+  .hist-body li { margin-bottom: 3px; }
+
+  /* ---------- Sheets / modals ---------- */
+  .backdrop {
+    position: fixed; inset: 0; background: rgba(10,15,25,0.4); z-index: 200;
+    display: none; align-items: flex-end; justify-content: center; padding: 12px;
+  }
+  .backdrop.show { display: flex; }
+  .sheet {
+    width: 100%; max-width: 560px; display: flex; flex-direction: column; gap: 8px;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+  .sheet-group { background: var(--card); border-radius: var(--radius); overflow: hidden; }
+  .sheet-btn {
+    width: 100%; padding: 16px; border: none; background: var(--card); font-size: 17px;
+    color: var(--accent); font-weight: 600; cursor: pointer; border-bottom: 1px solid var(--line); font-family: inherit;
+  }
+  .sheet-btn:last-child { border-bottom: none; }
+  .sheet-cancel {
+    width: 100%; padding: 16px; border: none; background: var(--card); border-radius: var(--radius);
+    font-size: 17px; font-weight: 700; color: var(--ink); cursor: pointer; font-family: inherit;
+  }
+  .modal {
+    width: 100%; max-width: 500px; background: var(--card); border-radius: var(--radius);
+    padding: 18px; max-height: 88vh; overflow-y: auto;
+  }
+  .modal h2 { margin: 0 0 4px; font-size: 18px; }
+  .modal p.sub { margin: 0 0 15px; font-size: 13px; color: var(--ink-soft); }
+  .backdrop.center { align-items: center; }
+  .summary-box {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12.5px; line-height: 1.5; background: #fafbfc; white-space: pre; overflow-x: auto;
+  }
+
+  .lightbox {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 300; display: none;
+    align-items: center; justify-content: center; padding: 20px;
+  }
+  .lightbox.show { display: flex; }
+  .lightbox img { max-width: 100%; max-height: 100%; border-radius: 8px; }
+
+  /* ---------- Auth ---------- */
+  .auth {
+    position: fixed; inset: 0; z-index: 500; overflow-y: auto;
+    background: linear-gradient(170deg, #12233b 0%, #1d3557 100%);
+    display: flex; align-items: center; justify-content: center; padding: 22px;
+  }
+  .auth.hide { display: none; }
+  .auth-card { width: 100%; max-width: 380px; background: var(--card); border-radius: 18px; padding: 22px; }
+  .auth-brand { text-align: center; margin-bottom: 18px; }
+  .brand-mark.lg {
+    width: 54px; height: 54px; border-radius: 13px; font-size: 20px; margin: 0 auto 10px;
+    background: var(--navy); color: #fff;
+  }
+  .auth-co { font-size: 19px; font-weight: 800; }
+  .auth-sub { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.7px; color: var(--ink-faint); margin-top: 3px; }
+  .auth-note { font-size: 13px; color: var(--ink-soft); text-align: center; margin: 0 0 16px; line-height: 1.45; }
+  .auth-err { color: var(--red); font-size: 13px; margin-top: 11px; text-align: center; display: none; font-weight: 600; }
+  .auth-err.show { display: block; }
+
+  .userchip {
+    background: rgba(255,255,255,0.14); border: none; color: #fff; height: 34px; padding: 0 11px;
+    border-radius: 8px; font-size: 12.5px; font-weight: 700; cursor: pointer; flex-shrink: 0;
+  }
+
+  /* ---------- User management ---------- */
+  .user-row { display: flex; align-items: center; gap: 10px; padding: 11px 0; border-top: 1px solid var(--line); }
+  .user-row:first-child { border-top: none; }
+  .user-av {
+    width: 35px; height: 35px; border-radius: 9px; background: var(--accent-soft); color: var(--navy-soft);
+    display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; flex-shrink: 0;
+  }
+  .user-main { flex: 1; min-width: 0; }
+  .user-name { font-size: 14.5px; font-weight: 650; }
+  .user-sub { font-size: 11.5px; color: var(--ink-faint); margin-top: 1px; }
+  .badge {
+    display: inline-block; font-size: 9.5px; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase;
+    padding: 2px 7px; border-radius: 5px; margin-left: 6px; vertical-align: 1px;
+  }
+  .badge.admin { background: var(--navy); color: #fff; }
+  .badge.inspector { background: var(--accent-soft); color: var(--navy-soft); }
+  .user-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  .mini-btn {
+    border: 1px solid var(--line); background: #fff; border-radius: 8px; padding: 6px 9px;
+    font-size: 11.5px; font-weight: 600; cursor: pointer; color: var(--ink-soft); font-family: inherit;
+  }
+  .mini-btn.danger { color: var(--red); border-color: #f2cecc; }
+  .divider { height: 1px; background: var(--line); margin: 16px 0; }
+  .modal h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--ink-faint); margin: 0 0 11px; }
+  .locked-note {
+    background: var(--yellow-bg); border: 1px solid #f0dca8; color: #855c00;
+    border-radius: 12px; padding: 12px 14px; font-size: 13px; margin-bottom: 12px; line-height: 1.45;
+  }
+
+  .toast {
+    position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%);
+    background: var(--navy); color: #fff; padding: 11px 18px; border-radius: 999px; font-size: 13.5px;
+    opacity: 0; pointer-events: none; transition: opacity 0.25s ease; z-index: 400; max-width: 88%; text-align: center;
+  }
+  .toast.show { opacity: 1; }
+
+  /* ---------- Print report ---------- */
+  #printArea { display: none; }
+  @media print {
+    @page { margin: 14mm; }
+    html, body { background: #fff !important; }
+    #app, .toast, .backdrop, .lightbox { display: none !important; }
+    #printArea { display: block !important; font-size: 11pt; color: #000; }
+    .pr-head { border-bottom: 2.5px solid #12233b; padding-bottom: 9px; margin-bottom: 14px; }
+    .pr-co { font-size: 17pt; font-weight: 800; }
+    .pr-title { font-size: 10pt; letter-spacing: 1.2px; text-transform: uppercase; color: #444; margin-top: 2px; }
+    .pr-sec { margin-bottom: 15px; page-break-inside: avoid; }
+    .pr-sec h3 {
+      font-size: 9.5pt; text-transform: uppercase; letter-spacing: 0.9px; color: #555;
+      border-bottom: 1px solid #bbb; padding-bottom: 3px; margin: 0 0 8px;
+    }
+    .pr-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 18px; }
+    .pr-kv { display: flex; justify-content: space-between; border-bottom: 1px dotted #ccc; padding: 3px 0; }
+    .pr-kv .k { color: #555; }
+    .pr-kv .v { font-weight: 700; }
+    .pr-status { display: inline-block; padding: 3px 11px; border: 1.5px solid #000; border-radius: 3px; font-weight: 800; font-size: 10pt; }
+    /* inset by 1px so the collapsed outer border isn't clipped at the page margin */
+    table.pr-tbl { width: calc(100% - 2px); margin: 0 1px; border-collapse: collapse; table-layout: fixed; }
+    table.pr-tbl td { word-wrap: break-word; overflow-wrap: break-word; }
+    table.pr-tbl th, table.pr-tbl td { border: 1px solid #999; padding: 5px 7px; text-align: left; font-size: 10pt; vertical-align: top; }
+    table.pr-tbl th {
+      background: #eef1f5; font-size: 8.5pt; text-transform: uppercase; letter-spacing: 0.2px;
+      overflow-wrap: break-word; word-break: break-word;
+    }
+    .pr-photos { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 5px; }
+    .pr-photos img { width: 108px; height: 108px; object-fit: cover; border: 1px solid #999; }
+    .pr-foot { margin-top: 16px; border-top: 1px solid #bbb; padding-top: 6px; font-size: 8.5pt; color: #666; }
+    .pr-page { page-break-after: always; }
+    .pr-page:last-child { page-break-after: auto; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="topbar">
+    <div class="brandbar">
+      <div class="brand-mark" id="brandMark">FC</div>
+      <div class="brand-text">
+        <div class="brand-name" id="brandName">Forever Clean</div>
+        <div class="brand-sub">Vehicle Inspection Report</div>
+      </div>
+      <button class="back-btn" id="backBtn" style="display:none;">‹ Back</button>
+      <button class="userchip" id="accountBtn" title="Account">AS</button>
+      <button class="gear" id="gearBtn" title="Settings">⚙</button>
+    </div>
+    <nav class="tabs" id="mainTabs">
+      <button data-view="inspect" class="active">New Inspection</button>
+      <button data-view="dashboard">Fleet Dashboard</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- ============ VIEW 1: NEW INSPECTION ============ -->
+    <section class="view active" id="view-inspect">
+      <div class="card">
+        <div class="card-title">Vehicle &amp; Inspection Details</div>
+        <div class="field">
+          <label for="truckSelect">Truck / Unit <span class="req">*</span></label>
+          <select id="truckSelect"></select>
+        </div>
+        <div class="field">
+          <label for="inspectorInput">Inspector <span class="req">*</span></label>
+          <input type="text" id="inspectorInput" placeholder="Full name" autocomplete="name">
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="odometerInput">Odometer</label>
+            <input type="number" id="odometerInput" placeholder="Miles" inputmode="numeric">
+          </div>
+          <div class="field">
+            <label for="dateInput">Date &amp; time</label>
+            <input type="datetime-local" id="dateInput">
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Defects Found</div>
+        <div id="defectRows"></div>
+        <button class="btn-add" id="addDefectBtn" type="button">+ Add Defect</button>
+        <div class="hint">Leave rows blank if there is nothing to report. Blank rows are not saved.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Vehicle Condition</div>
+        <div class="condition-opts" id="conditionOpts">
+          <div class="cond" data-cond="green">
+            <span class="dot green"></span>
+            <span class="cond-txt">
+              <span class="cond-main">Satisfactory</span>
+              <span class="cond-sub">No defects — safe to operate</span>
+            </span>
+            <span class="check">✓</span>
+          </div>
+          <div class="cond" data-cond="yellow">
+            <span class="dot yellow"></span>
+            <span class="cond-txt">
+              <span class="cond-main">Defects noted — repairs needed</span>
+              <span class="cond-sub">Operable, but requires attention</span>
+            </span>
+            <span class="check">✓</span>
+          </div>
+          <div class="cond" data-cond="red">
+            <span class="dot red"></span>
+            <span class="cond-txt">
+              <span class="cond-main">Out of service</span>
+              <span class="cond-sub">Unsafe — do not operate until repaired</span>
+            </span>
+            <span class="check">✓</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="stack">
+        <button class="btn btn-primary" id="saveReportBtn" type="button">Submit Inspection Report</button>
+      </div>
+    </section>
+
+    <!-- ============ VIEW 2: DASHBOARD ============ -->
+    <section class="view" id="view-dashboard">
+      <div class="summary" id="summary"></div>
+      <div class="filters" id="filters">
+        <button class="chip active" data-filter="all" type="button">All trucks</button>
+        <button class="chip" data-filter="red" type="button">Out of service</button>
+        <button class="chip" data-filter="yellow" type="button">Defects</button>
+        <button class="chip" data-filter="green" type="button">Good to go</button>
+      </div>
+      <div id="truckList"></div>
+      <div class="stack" style="margin-top:14px;">
+        <button class="btn btn-outline" id="printFleetBtn" type="button">Print / Save Fleet Status Report</button>
+      </div>
+    </section>
+
+    <!-- ============ VIEW 3: TRUCK DETAIL ============ -->
+    <section class="view" id="view-detail">
+      <div class="card detail-hero">
+        <div class="name" id="detailName">Truck</div>
+        <div id="detailStatusPill"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Last Inspection</div>
+        <div id="detailInfo"></div>
+      </div>
+
+      <div class="card" id="detailDefectsCard">
+        <div class="card-title">Open Defects</div>
+        <div id="detailDefects"></div>
+      </div>
+
+      <div class="locked-note" id="repairLocked" style="display:none;">
+        Only an administrator can close out repairs or change a truck's service status.
+      </div>
+      <div class="btn-row" id="repairActions" style="margin-bottom:12px;">
+        <button class="btn btn-green" id="fixedBtn" type="button">Repairs Fixed</button>
+        <button class="btn btn-red" id="notDoneBtn" type="button">Not Done</button>
+      </div>
+      <div class="stack" style="margin-bottom:12px;">
+        <button class="btn btn-outline" id="printTruckBtn" type="button">Print / Save Inspection Report</button>
+        <button class="btn btn-outline" id="emailTruckBtn" type="button">Email Summary</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Inspection History</div>
+        <div id="detailHistory"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- hidden pickers -->
+<input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none">
+<input type="file" id="libraryInput" accept="image/*" multiple style="display:none">
+
+<!-- photo source sheet -->
+<div class="backdrop" id="photoSheet">
+  <div class="sheet">
+    <div class="sheet-group">
+      <button class="sheet-btn" type="button" id="sheetCamera">Take Photo</button>
+      <button class="sheet-btn" type="button" id="sheetLibrary">Choose from Photos</button>
+    </div>
+    <button class="sheet-cancel" type="button" id="sheetCancel">Cancel</button>
+  </div>
+</div>
+
+<!-- repair sign-off modal -->
+<div class="backdrop center" id="repairModal">
+  <div class="modal">
+    <h2 id="repairTitle">Repairs Completed</h2>
+    <p class="sub" id="repairSub">Record who completed the work before returning this truck to service.</p>
+    <div class="field">
+      <label for="repairBy">Repaired by <span class="req">*</span></label>
+      <input type="text" id="repairBy" placeholder="Mechanic or shop name">
+    </div>
+    <div class="field">
+      <label for="repairNote">Work performed / notes</label>
+      <textarea id="repairNote" placeholder="Optional"></textarea>
+    </div>
+    <div class="btn-row" style="margin-top:14px;">
+      <button class="btn btn-outline" id="repairCancel" type="button">Cancel</button>
+      <button class="btn btn-green" id="repairConfirm" type="button">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- email summary modal -->
+<div class="backdrop center" id="emailModal">
+  <div class="modal">
+    <h2>Inspection Summary</h2>
+    <p class="sub">Copy this and paste it into an email, or hand it to your mail app.</p>
+    <textarea id="emailText" class="summary-box" rows="13" readonly></textarea>
+    <button class="btn btn-dark" id="emailCopy" type="button" style="margin-top:12px;">Copy Summary</button>
+    <div class="btn-row" style="margin-top:10px;">
+      <button class="btn btn-outline" id="emailOpen" type="button">Open Mail App</button>
+      <button class="btn btn-outline" id="emailClose" type="button">Close</button>
+    </div>
+    <div class="hint" style="margin-top:10px;">Photos can't ride along in an email — use Print / Save Inspection Report for the full record.</div>
+  </div>
+</div>
+
+<!-- settings modal -->
+<div class="backdrop center" id="settingsModal">
+  <div class="modal">
+    <h2>Settings</h2>
+    <p class="sub">Company details and fleet list.</p>
+    <div class="field">
+      <label for="companyInput">Company name</label>
+      <input type="text" id="companyInput" placeholder="Your company name">
+    </div>
+    <div class="field">
+      <label for="fleetInput">Fleet list — one truck per line</label>
+      <textarea id="fleetInput" rows="9" placeholder="Truck 101&#10;Truck 102"></textarea>
+      <div class="hint">Existing inspection records are kept for any truck whose name stays the same.</div>
+    </div>
+    <div class="divider"></div>
+    <button class="btn btn-outline" id="openUsersBtn" type="button">Manage Inspectors &amp; Admins</button>
+    <div class="btn-row" style="margin-top:14px;">
+      <button class="btn btn-outline" id="settingsCancel" type="button">Cancel</button>
+      <button class="btn btn-dark" id="settingsSave" type="button">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- account sheet -->
+<div class="backdrop" id="accountSheet">
+  <div class="sheet">
+    <div class="sheet-group">
+      <div style="padding:14px 16px;background:var(--card);border-bottom:1px solid var(--line);">
+        <div style="font-size:15px;font-weight:700;" id="acctName">—</div>
+        <div style="font-size:12px;color:var(--ink-faint);margin-top:2px;" id="acctSub">—</div>
+      </div>
+      <button class="sheet-btn" type="button" id="acctChangePw">Change My Password</button>
+      <button class="sheet-btn" type="button" id="acctSignOut" style="color:var(--red);">Sign Out</button>
+    </div>
+    <button class="sheet-cancel" type="button" id="acctCancel">Cancel</button>
+  </div>
+</div>
+
+<!-- users modal -->
+<div class="backdrop center" id="usersModal">
+  <div class="modal">
+    <h2>Inspectors &amp; Admins</h2>
+    <p class="sub">Everyone who can sign in on this device.</p>
+    <div id="userList"></div>
+    <div class="divider"></div>
+    <h3>Add a person</h3>
+    <div class="field">
+      <label for="newUserName">Full name</label>
+      <input type="text" id="newUserName" placeholder="Jane Doe">
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label for="newUserLogin">Username</label>
+        <input type="text" id="newUserLogin" placeholder="jdoe" autocapitalize="none" autocorrect="off" spellcheck="false">
+      </div>
+      <div class="field">
+        <label for="newUserRole">Role</label>
+        <select id="newUserRole">
+          <option value="inspector">Inspector</option>
+          <option value="admin">Administrator</option>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label for="newUserPass">Password</label>
+      <input type="password" id="newUserPass" placeholder="At least 4 characters">
+    </div>
+    <button class="btn btn-primary" id="addUserBtn" type="button">Add Person</button>
+    <div class="hint" style="margin-top:10px;">Inspectors can run inspections and view reports. Administrators can also close out repairs, edit the fleet, and manage people.</div>
+    <div class="btn-row" style="margin-top:14px;">
+      <button class="btn btn-outline" id="usersClose" type="button">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- password modal -->
+<div class="backdrop center" id="pwModal">
+  <div class="modal">
+    <h2 id="pwTitle">Change Password</h2>
+    <p class="sub" id="pwSub">Enter a new password.</p>
+    <div class="field" id="pwCurrentField">
+      <label for="pwCurrent">Current password</label>
+      <input type="password" id="pwCurrent">
+    </div>
+    <div class="field">
+      <label for="pwNew">New password</label>
+      <input type="password" id="pwNew" placeholder="At least 4 characters">
+    </div>
+    <div class="field">
+      <label for="pwNew2">Confirm new password</label>
+      <input type="password" id="pwNew2">
+    </div>
+    <div class="btn-row" style="margin-top:14px;">
+      <button class="btn btn-outline" id="pwCancel" type="button">Cancel</button>
+      <button class="btn btn-dark" id="pwConfirm" type="button">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- sign-in / first-run setup -->
+<div class="auth" id="authScreen">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <div class="brand-mark lg" id="authMark">FC</div>
+      <div class="auth-co" id="authCo">Forever Clean</div>
+      <div class="auth-sub">Vehicle Inspection Report</div>
+    </div>
+
+    <div id="authSetup" style="display:none;">
+      <p class="auth-note">First time here. Create the administrator account — you'll add your inspectors afterward.</p>
+      <div class="field">
+        <label for="setupName">Your full name</label>
+        <input type="text" id="setupName" placeholder="Jane Doe">
+      </div>
+      <div class="field">
+        <label for="setupUser">Username</label>
+        <input type="text" id="setupUser" placeholder="admin" autocapitalize="none" autocorrect="off" spellcheck="false">
+      </div>
+      <div class="field">
+        <label for="setupPass">Password</label>
+        <input type="password" id="setupPass" placeholder="At least 4 characters">
+      </div>
+      <div class="field">
+        <label for="setupPass2">Confirm password</label>
+        <input type="password" id="setupPass2">
+      </div>
+      <button class="btn btn-dark" id="setupBtn" type="button">Create Administrator</button>
+    </div>
+
+    <div id="authLogin">
+      <div class="field">
+        <label for="loginUser">Username</label>
+        <input type="text" id="loginUser" autocapitalize="none" autocorrect="off" spellcheck="false">
+      </div>
+      <div class="field">
+        <label for="loginPass">Password</label>
+        <input type="password" id="loginPass">
+      </div>
+      <button class="btn btn-primary" id="loginBtn" type="button">Sign In</button>
+    </div>
+
+    <div class="auth-err" id="authErr"></div>
+  </div>
+</div>
+
+<div class="lightbox" id="lightbox"><img id="lightboxImg" alt="Defect photo"></div>
+<div class="toast" id="toast"></div>
+<div id="printArea"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ===================== CONFIG =====================
+  var STORAGE_KEY = "truckInspectionApp.v2";
+  var SESSION_KEY = "truckInspectionApp.session";
+  var MIN_PASSWORD = 4;
+  var DEFAULT_DEFECT_ROWS = 4;      // permanent blank defect rows on a new inspection
+  var MAX_IMG_DIM = 820;            // px, longest side
+  var JPEG_QUALITY = 0.68;
+  var MAX_HISTORY = 25;             // events kept per truck
+
+  var DEFAULT_COMPANY = "Forever Clean";
+  var DEFAULT_TRUCK_NAMES = [
+    "Truck 101", "Truck 102", "Truck 103", "Truck 104", "Truck 105",
+    "Truck 106", "Truck 107", "Truck 108", "Truck 109", "Truck 110",
+    "Truck 111", "Truck 112", "Truck 113", "Truck 114", "Truck 115"
+  ];
+  var CATEGORIES = [
+    "Brakes", "Tires & Wheels", "Lights & Reflectors", "Steering", "Suspension",
+    "Coupling / Hitch", "Windshield & Wipers", "Mirrors", "Horn", "Exhaust",
+    "Fuel System", "Engine", "Transmission", "Fluid Leak", "Body & Frame",
+    "Safety Equipment", "Other"
+  ];
+
+  // ===================== STATE =====================
+  var state = null;
+  var draft = null;                  // in-progress inspection form
+  var activeDetailTruckId = null;
+  var pendingPhotoRow = null;
+  var dashboardFilter = "all";
+  var storageWarned = false;
+  var session = null;                // { userId } of whoever is signed in on this device
+
+  // ===================== STORAGE =====================
+  function defaultTrucks() {
+    return DEFAULT_TRUCK_NAMES.map(function (name, i) {
+      return newTruck("t" + (i + 1), name);
+    });
+  }
+
+  function newTruck(id, name) {
+    return {
+      id: id, name: name, status: "green", inspector: "",
+      odometer: "", defects: [], lastInspected: null, history: []
+    };
+  }
+
+  function loadState() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        var p = JSON.parse(raw);
+        if (p && Array.isArray(p.trucks) && p.trucks.length) {
+          p.company = p.company || DEFAULT_COMPANY;
+          p.users = Array.isArray(p.users) ? p.users : [];
+          p.trucks.forEach(function (t) {
+            t.history = t.history || [];
+            t.defects = t.defects || [];
+          });
+          return p;
+        }
+      }
+    } catch (e) { /* fall through to defaults */ }
+    return { company: DEFAULT_COMPANY, users: [], trucks: defaultTrucks() };
+  }
+
+  // Strip photos from the oldest history entry that still has them, so a full
+  // storage quota degrades gracefully instead of losing the whole save.
+  function pruneOldestPhotos() {
+    var oldest = null, oldestTruck = null;
+    state.trucks.forEach(function (t) {
+      (t.history || []).forEach(function (h) {
+        if (h.photosPruned) return;
+        var has = (h.defects || []).some(function (d) { return d.photos && d.photos.length; });
+        if (!has) return;
+        if (!oldest || new Date(h.date) < new Date(oldest.date)) { oldest = h; oldestTruck = t; }
+      });
+    });
+    if (!oldest) return false;
+    oldest.defects.forEach(function (d) { d.photos = []; });
+    oldest.photosPruned = true;
+    return true;
+  }
+
+  function saveState() {
+    for (var attempt = 0; attempt < 8; attempt++) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        return true;
+      } catch (e) {
+        if (!pruneOldestPhotos()) {
+          if (!storageWarned) {
+            storageWarned = true;
+            showToast("Storage is full — older photos are being dropped.");
+          }
+          return false;
+        }
+      }
+    }
+    return false;
+  }
+
+  // ===================== HELPERS =====================
+  function uid() { return Math.random().toString(36).slice(2) + Date.now().toString(36); }
+
+  function esc(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+
+  function showToast(msg) {
+    var t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(showToast._tid);
+    showToast._tid = setTimeout(function () { t.classList.remove("show"); }, 2600);
+  }
+
+  function getTruck(id) {
+    for (var i = 0; i < state.trucks.length; i++) {
+      if (state.trucks[i].id === id) return state.trucks[i];
+    }
+    return null;
+  }
+
+  function statusLabel(s) {
+    return s === "green" ? "Good to go" : s === "yellow" ? "Defects — repairs needed" : s === "red" ? "Out of service" : "";
+  }
+  function statusShort(s) {
+    return s === "green" ? "Good to go" : s === "yellow" ? "Defects" : s === "red" ? "Out of service" : "";
+  }
+
+  function fmtDateTime(iso) {
+    if (!iso) return "—";
+    var d = new Date(iso);
+    if (isNaN(d)) return "—";
+    return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) +
+      ", " + d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  }
+  function fmtDate(iso) {
+    if (!iso) return "—";
+    var d = new Date(iso);
+    if (isNaN(d)) return "—";
+    return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  }
+  function fmtMiles(v) {
+    if (v === "" || v == null) return "—";
+    var n = Number(v);
+    return isNaN(n) ? String(v) : n.toLocaleString() + " mi";
+  }
+  function toLocalInputValue(d) {
+    var p = function (n) { return String(n).padStart(2, "0"); };
+    return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()) +
+      "T" + p(d.getHours()) + ":" + p(d.getMinutes());
+  }
+  function initials(name) {
+    var parts = String(name || "").trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return "FC";
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+
+  function fileToCompressedDataURL(file) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onerror = reject;
+      reader.onload = function () {
+        var img = new Image();
+        img.onerror = reject;
+        img.onload = function () {
+          var scale = Math.min(1, MAX_IMG_DIM / Math.max(img.width, img.height));
+          var canvas = document.createElement("canvas");
+          canvas.width = Math.round(img.width * scale);
+          canvas.height = Math.round(img.height * scale);
+          canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+          try { resolve(canvas.toDataURL("image/jpeg", JPEG_QUALITY)); }
+          catch (e) { resolve(reader.result); }
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // ===================== ACCOUNTS =====================
+  // Passwords are salted and hashed rather than stored as typed. Note this is a
+  // self-contained browser app: the gate keeps the wrong people from tapping the
+  // wrong button, it is not server-grade security.
+  function randomSalt() {
+    if (window.crypto && crypto.getRandomValues) {
+      var a = new Uint8Array(12);
+      crypto.getRandomValues(a);
+      return Array.prototype.map.call(a, function (b) { return b.toString(16).padStart(2, "0"); }).join("");
+    }
+    return uid() + uid();
+  }
+
+  function weakHash(str) {
+    var h1 = 0x811c9dc5, h2 = 0x01000193;
+    for (var i = 0; i < str.length; i++) {
+      h1 ^= str.charCodeAt(i); h1 = (h1 * 0x01000193) >>> 0;
+      h2 = ((h2 << 5) - h2 + str.charCodeAt(i)) >>> 0;
+    }
+    return "fb" + h1.toString(16) + h2.toString(16) + str.length.toString(16);
+  }
+
+  function hashPassword(pw, salt) {
+    var payload = salt + "|" + pw;
+    if (window.crypto && crypto.subtle && crypto.subtle.digest) {
+      try {
+        return crypto.subtle.digest("SHA-256", new TextEncoder().encode(payload))
+          .then(function (buf) {
+            return Array.prototype.map.call(new Uint8Array(buf), function (b) {
+              return b.toString(16).padStart(2, "0");
+            }).join("");
+          })
+          .catch(function () { return weakHash(payload); });
+      } catch (e) { /* fall through */ }
+    }
+    return Promise.resolve(weakHash(payload));
+  }
+
+  function newUser(name, username, role, pw) {
+    var salt = randomSalt();
+    return hashPassword(pw, salt).then(function (hash) {
+      return {
+        id: "u" + uid(), name: name.trim(),
+        username: username.trim().toLowerCase(),
+        role: role, salt: salt, hash: hash,
+        createdAt: new Date().toISOString()
+      };
+    });
+  }
+
+  function findUserByLogin(username) {
+    var u = String(username || "").trim().toLowerCase();
+    for (var i = 0; i < state.users.length; i++) {
+      if (state.users[i].username === u) return state.users[i];
+    }
+    return null;
+  }
+  function getUser(id) {
+    for (var i = 0; i < state.users.length; i++) {
+      if (state.users[i].id === id) return state.users[i];
+    }
+    return null;
+  }
+  function currentUser() { return session ? getUser(session.userId) : null; }
+  function isAdmin() { var u = currentUser(); return !!u && u.role === "admin"; }
+  function adminCount() {
+    return state.users.filter(function (u) { return u.role === "admin"; }).length;
+  }
+
+  function saveSession() {
+    try {
+      if (session) localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+      else localStorage.removeItem(SESSION_KEY);
+    } catch (e) { /* session just won't persist */ }
+  }
+  function restoreSession() {
+    try {
+      var raw = localStorage.getItem(SESSION_KEY);
+      if (!raw) return false;
+      var s = JSON.parse(raw);
+      if (s && s.userId && getUser(s.userId)) { session = s; return true; }
+    } catch (e) { /* ignore */ }
+    session = null;
+    return false;
+  }
+
+  // ---------- auth screen ----------
+  var authScreen = document.getElementById("authScreen");
+
+  function authError(msg) {
+    var el = document.getElementById("authErr");
+    el.textContent = msg || "";
+    el.classList.toggle("show", !!msg);
+  }
+
+  function showAuth(mode) {
+    document.getElementById("authMark").textContent = initials(state.company);
+    document.getElementById("authCo").textContent = state.company;
+    document.getElementById("authSetup").style.display = mode === "setup" ? "block" : "none";
+    document.getElementById("authLogin").style.display = mode === "setup" ? "none" : "block";
+    authError("");
+    authScreen.classList.remove("hide");
+    document.body.style.overflow = "hidden";
+  }
+
+  function startApp() {
+    authScreen.classList.add("hide");
+    document.body.style.overflow = "";
+    applyPermissions();
+    resetDraft(draft && draft.truckId);
+    renderInspect();
+    switchView("inspect");
+  }
+
+  document.getElementById("setupBtn").addEventListener("click", function () {
+    var name = document.getElementById("setupName").value.trim();
+    var login = document.getElementById("setupUser").value.trim();
+    var p1 = document.getElementById("setupPass").value;
+    var p2 = document.getElementById("setupPass2").value;
+
+    if (!name) return authError("Enter your full name.");
+    if (!/^[a-zA-Z0-9._-]{3,}$/.test(login)) return authError("Username must be at least 3 characters — letters, numbers, dot, dash, underscore.");
+    if (p1.length < MIN_PASSWORD) return authError("Password must be at least " + MIN_PASSWORD + " characters.");
+    if (p1 !== p2) return authError("Passwords don't match.");
+
+    newUser(name, login, "admin", p1).then(function (u) {
+      state.users.push(u);
+      session = { userId: u.id };
+      saveState();
+      saveSession();
+      startApp();
+      showToast("Administrator account created");
+    });
+  });
+
+  function attemptLogin() {
+    var login = document.getElementById("loginUser").value.trim();
+    var pw = document.getElementById("loginPass").value;
+    if (!login || !pw) return authError("Enter your username and password.");
+
+    var u = findUserByLogin(login);
+    if (!u) return authError("Wrong username or password.");
+
+    hashPassword(pw, u.salt).then(function (h) {
+      if (h !== u.hash) return authError("Wrong username or password.");
+      session = { userId: u.id };
+      saveSession();
+      document.getElementById("loginPass").value = "";
+      authError("");
+      startApp();
+      showToast("Signed in as " + u.name);
+    });
+  }
+  document.getElementById("loginBtn").addEventListener("click", attemptLogin);
+  document.getElementById("loginPass").addEventListener("keydown", function (e) {
+    if (e.key === "Enter") attemptLogin();
+  });
+
+  function signOut() {
+    session = null;
+    saveSession();
+    document.getElementById("loginUser").value = "";
+    document.getElementById("loginPass").value = "";
+    showAuth("login");
+  }
+
+  // ---------- permissions ----------
+  function applyPermissions() {
+    var u = currentUser();
+    var chip = document.getElementById("accountBtn");
+    chip.textContent = u ? initials(u.name) : "—";
+    chip.title = u ? (u.name + " · " + (u.role === "admin" ? "Administrator" : "Inspector")) : "Account";
+
+    var admin = isAdmin();
+    document.getElementById("gearBtn").style.display = admin ? "block" : "none";
+    document.getElementById("repairActions").style.display = admin ? "flex" : "none";
+    document.getElementById("repairLocked").style.display = admin ? "none" : "block";
+
+    var insEl = document.getElementById("inspectorInput");
+    if (u) {
+      insEl.value = u.name;
+      insEl.readOnly = true;
+    } else {
+      insEl.readOnly = false;
+    }
+  }
+
+  // ---------- account sheet ----------
+  var accountSheet = document.getElementById("accountSheet");
+  document.getElementById("accountBtn").addEventListener("click", function () {
+    var u = currentUser();
+    if (!u) return;
+    document.getElementById("acctName").textContent = u.name;
+    document.getElementById("acctSub").textContent = "@" + u.username + " · " + (u.role === "admin" ? "Administrator" : "Inspector");
+    accountSheet.classList.add("show");
+  });
+  document.getElementById("acctCancel").addEventListener("click", function () { accountSheet.classList.remove("show"); });
+  accountSheet.addEventListener("click", function (e) { if (e.target === accountSheet) accountSheet.classList.remove("show"); });
+  document.getElementById("acctSignOut").addEventListener("click", function () {
+    accountSheet.classList.remove("show");
+    signOut();
+  });
+  document.getElementById("acctChangePw").addEventListener("click", function () {
+    accountSheet.classList.remove("show");
+    openPwModal(currentUser(), true);
+  });
+
+  // ---------- password modal (own change + admin reset) ----------
+  var pwModal = document.getElementById("pwModal");
+  var pwTarget = null, pwNeedsCurrent = false;
+
+  function openPwModal(user, needsCurrent) {
+    if (!user) return;
+    pwTarget = user;
+    pwNeedsCurrent = !!needsCurrent;
+    document.getElementById("pwTitle").textContent = needsCurrent ? "Change Password" : "Reset Password";
+    document.getElementById("pwSub").textContent = needsCurrent
+      ? "Enter your current password, then the new one."
+      : "Set a new password for " + user.name + ".";
+    document.getElementById("pwCurrentField").style.display = needsCurrent ? "block" : "none";
+    document.getElementById("pwCurrent").value = "";
+    document.getElementById("pwNew").value = "";
+    document.getElementById("pwNew2").value = "";
+    pwModal.classList.add("show");
+  }
+  function closePwModal() { pwModal.classList.remove("show"); pwTarget = null; }
+  document.getElementById("pwCancel").addEventListener("click", closePwModal);
+  pwModal.addEventListener("click", function (e) { if (e.target === pwModal) closePwModal(); });
+
+  document.getElementById("pwConfirm").addEventListener("click", function () {
+    if (!pwTarget) return;
+    var cur = document.getElementById("pwCurrent").value;
+    var n1 = document.getElementById("pwNew").value;
+    var n2 = document.getElementById("pwNew2").value;
+
+    if (n1.length < MIN_PASSWORD) { showToast("Password must be at least " + MIN_PASSWORD + " characters."); return; }
+    if (n1 !== n2) { showToast("Passwords don't match."); return; }
+
+    var check = pwNeedsCurrent
+      ? hashPassword(cur, pwTarget.salt).then(function (h) { return h === pwTarget.hash; })
+      : Promise.resolve(true);
+
+    check.then(function (ok) {
+      if (!ok) { showToast("Current password is wrong."); return; }
+      var salt = randomSalt();
+      return hashPassword(n1, salt).then(function (hash) {
+        pwTarget.salt = salt;
+        pwTarget.hash = hash;
+        saveState();
+        renderUserList();
+        closePwModal();
+        showToast("Password updated");
+      });
+    });
+  });
+
+  // ---------- users modal ----------
+  var usersModal = document.getElementById("usersModal");
+
+  function renderUserList() {
+    var el = document.getElementById("userList");
+    if (!el) return;
+    el.innerHTML = "";
+    var me = currentUser();
+
+    state.users.forEach(function (u) {
+      var row = document.createElement("div");
+      row.className = "user-row";
+
+      var av = document.createElement("div");
+      av.className = "user-av";
+      av.textContent = initials(u.name);
+
+      var main = document.createElement("div");
+      main.className = "user-main";
+      main.innerHTML =
+        '<div class="user-name">' + esc(u.name) +
+        '<span class="badge ' + u.role + '">' + (u.role === "admin" ? "Admin" : "Inspector") + '</span></div>' +
+        '<div class="user-sub">@' + esc(u.username) + (me && me.id === u.id ? " · you" : "") + '</div>';
+
+      var actions = document.createElement("div");
+      actions.className = "user-actions";
+
+      var reset = document.createElement("button");
+      reset.className = "mini-btn";
+      reset.type = "button";
+      reset.textContent = "Password";
+      reset.addEventListener("click", function () { openPwModal(u, me && me.id === u.id); });
+      actions.appendChild(reset);
+
+      var lastAdmin = u.role === "admin" && adminCount() <= 1;
+      var isMe = me && me.id === u.id;
+      if (!isMe && !lastAdmin) {
+        var del = document.createElement("button");
+        del.className = "mini-btn danger";
+        del.type = "button";
+        del.textContent = "Remove";
+        del.addEventListener("click", function () {
+          state.users = state.users.filter(function (x) { return x.id !== u.id; });
+          saveState();
+          renderUserList();
+          showToast(u.name + " removed");
+        });
+        actions.appendChild(del);
+      }
+
+      row.appendChild(av);
+      row.appendChild(main);
+      row.appendChild(actions);
+      el.appendChild(row);
+    });
+  }
+
+  document.getElementById("openUsersBtn").addEventListener("click", function () {
+    if (!isAdmin()) return;
+    document.getElementById("settingsModal").classList.remove("show");
+    renderUserList();
+    usersModal.classList.add("show");
+  });
+  document.getElementById("usersClose").addEventListener("click", function () { usersModal.classList.remove("show"); });
+  usersModal.addEventListener("click", function (e) { if (e.target === usersModal) usersModal.classList.remove("show"); });
+
+  document.getElementById("addUserBtn").addEventListener("click", function () {
+    if (!isAdmin()) return;
+    var name = document.getElementById("newUserName").value.trim();
+    var login = document.getElementById("newUserLogin").value.trim();
+    var role = document.getElementById("newUserRole").value;
+    var pw = document.getElementById("newUserPass").value;
+
+    if (!name) { showToast("Enter a full name."); return; }
+    if (!/^[a-zA-Z0-9._-]{3,}$/.test(login)) { showToast("Username needs 3+ characters — letters, numbers, dot, dash, underscore."); return; }
+    if (findUserByLogin(login)) { showToast("That username is already taken."); return; }
+    if (pw.length < MIN_PASSWORD) { showToast("Password must be at least " + MIN_PASSWORD + " characters."); return; }
+
+    newUser(name, login, role, pw).then(function (u) {
+      state.users.push(u);
+      saveState();
+      document.getElementById("newUserName").value = "";
+      document.getElementById("newUserLogin").value = "";
+      document.getElementById("newUserPass").value = "";
+      document.getElementById("newUserRole").value = "inspector";
+      renderUserList();
+      showToast(u.name + " added as " + (role === "admin" ? "administrator" : "inspector"));
+    });
+  });
+
+  // ===================== DRAFT =====================
+  function blankDefectRow(locked) {
+    return { id: uid(), category: "", text: "", photos: [], locked: !!locked };
+  }
+
+  function resetDraft(keepTruckId) {
+    var rows = [];
+    for (var i = 0; i < DEFAULT_DEFECT_ROWS; i++) rows.push(blankDefectRow(true));
+    var me = currentUser();
+    draft = {
+      truckId: keepTruckId || (state.trucks[0] && state.trucks[0].id),
+      inspector: me ? me.name : "",
+      odometer: "",
+      date: new Date().toISOString(),
+      condition: "green",
+      rows: rows
+    };
+  }
+
+  function cleanedDefects() {
+    return draft.rows
+      .filter(function (r) { return r.text.trim() || r.category || (r.photos && r.photos.length); })
+      .map(function (r) {
+        return {
+          id: r.id,
+          category: r.category || "Other",
+          text: r.text.trim() || "(no description provided)",
+          photos: (r.photos || []).slice()
+        };
+      });
+  }
+
+  // ===================== NAVIGATION =====================
+  function switchView(name) {
+    document.querySelectorAll(".view").forEach(function (v) { v.classList.remove("active"); });
+    document.getElementById("view-" + name).classList.add("active");
+    document.querySelectorAll("#mainTabs button").forEach(function (b) {
+      b.classList.toggle("active", b.dataset.view === name);
+    });
+    document.getElementById("mainTabs").style.display = (name === "detail") ? "none" : "flex";
+    document.getElementById("backBtn").style.display = (name === "detail") ? "block" : "none";
+    document.getElementById("gearBtn").style.display = (name === "detail" || !isAdmin()) ? "none" : "block";
+    document.getElementById("accountBtn").style.display = (name === "detail") ? "none" : "block";
+    window.scrollTo(0, 0);
+
+    if (name === "dashboard") renderDashboard();
+    if (name === "inspect") renderInspect();
+    if (name === "detail") renderDetail();
+  }
+
+  document.getElementById("mainTabs").addEventListener("click", function (e) {
+    var btn = e.target.closest("button[data-view]");
+    if (btn) switchView(btn.dataset.view);
+  });
+  document.getElementById("backBtn").addEventListener("click", function () { switchView("dashboard"); });
+
+  // ===================== PHOTO PICKER =====================
+  var photoSheet = document.getElementById("photoSheet");
+  var cameraInput = document.getElementById("cameraInput");
+  var libraryInput = document.getElementById("libraryInput");
+
+  function openPhotoSheet(row) { pendingPhotoRow = row; photoSheet.classList.add("show"); }
+  function closePhotoSheet() { photoSheet.classList.remove("show"); }
+
+  function attachPhotos(fileList) {
+    var row = pendingPhotoRow;
+    if (!row || !fileList || !fileList.length) return;
+    Promise.all(Array.prototype.slice.call(fileList).map(fileToCompressedDataURL))
+      .then(function (urls) {
+        row.photos = row.photos || [];
+        urls.forEach(function (u) { row.photos.push(u); });
+        renderDefectRows();
+      })
+      .catch(function () { showToast("Couldn't read that image — try another."); });
+  }
+
+  document.getElementById("sheetCamera").addEventListener("click", function () { closePhotoSheet(); cameraInput.click(); });
+  document.getElementById("sheetLibrary").addEventListener("click", function () { closePhotoSheet(); libraryInput.click(); });
+  document.getElementById("sheetCancel").addEventListener("click", function () { pendingPhotoRow = null; closePhotoSheet(); });
+  photoSheet.addEventListener("click", function (e) {
+    if (e.target === photoSheet) { pendingPhotoRow = null; closePhotoSheet(); }
+  });
+  cameraInput.addEventListener("change", function () { attachPhotos(cameraInput.files); cameraInput.value = ""; });
+  libraryInput.addEventListener("change", function () { attachPhotos(libraryInput.files); libraryInput.value = ""; });
+
+  // ===================== LIGHTBOX =====================
+  var lightbox = document.getElementById("lightbox");
+  function openLightbox(src) {
+    document.getElementById("lightboxImg").src = src;
+    lightbox.classList.add("show");
+  }
+  lightbox.addEventListener("click", function () { lightbox.classList.remove("show"); });
+
+  // ===================== VIEW 1: INSPECTION =====================
+  function renderTruckOptions() {
+    var sel = document.getElementById("truckSelect");
+    var keep = draft && draft.truckId;
+    sel.innerHTML = "";
+    state.trucks.forEach(function (t) {
+      var o = document.createElement("option");
+      o.value = t.id;
+      o.textContent = t.name + (t.status === "red" ? "  — OUT OF SERVICE" : t.status === "yellow" ? "  — has defects" : "");
+      sel.appendChild(o);
+    });
+    if (keep && getTruck(keep)) sel.value = keep;
+  }
+
+  function renderConditionOpts() {
+    document.querySelectorAll("#conditionOpts .cond").forEach(function (el) {
+      el.classList.remove("sel-green", "sel-yellow", "sel-red");
+      if (el.dataset.cond === draft.condition) el.classList.add("sel-" + draft.condition);
+    });
+  }
+
+  function renderInspect() {
+    renderTruckOptions();
+    document.getElementById("inspectorInput").value = draft.inspector;
+    document.getElementById("odometerInput").value = draft.odometer;
+    document.getElementById("dateInput").value = toLocalInputValue(new Date(draft.date));
+    renderConditionOpts();
+    renderDefectRows();
+  }
+
+  function renderDefectRows() {
+    var c = document.getElementById("defectRows");
+    c.innerHTML = "";
+
+    draft.rows.forEach(function (row, idx) {
+      var rowEl = document.createElement("div");
+      rowEl.className = "defect-row";
+
+      var head = document.createElement("div");
+      head.className = "defect-head";
+      var num = document.createElement("span");
+      num.className = "defect-num";
+      num.textContent = "DEFECT " + (idx + 1);
+      head.appendChild(num);
+      if (!row.locked) {
+        var rm = document.createElement("button");
+        rm.className = "link-remove";
+        rm.type = "button";
+        rm.textContent = "Remove";
+        rm.addEventListener("click", function () {
+          draft.rows = draft.rows.filter(function (r) { return r.id !== row.id; });
+          renderDefectRows();
+        });
+        head.appendChild(rm);
+      }
+      rowEl.appendChild(head);
+
+      var catSel = document.createElement("select");
+      catSel.style.marginBottom = "8px";
+      var blank = document.createElement("option");
+      blank.value = "";
+      blank.textContent = "Select category…";
+      catSel.appendChild(blank);
+      CATEGORIES.forEach(function (cat) {
+        var o = document.createElement("option");
+        o.value = cat; o.textContent = cat;
+        catSel.appendChild(o);
+      });
+      catSel.value = row.category || "";
+      catSel.addEventListener("change", function () { row.category = catSel.value; });
+      rowEl.appendChild(catSel);
+
+      var main = document.createElement("div");
+      main.className = "defect-row-main";
+
+      var input = document.createElement("input");
+      input.type = "text";
+      input.placeholder = "Describe the defect";
+      input.value = row.text;
+      input.addEventListener("input", function () { row.text = input.value; });
+
+      var photoBtn = document.createElement("button");
+      photoBtn.type = "button";
+      photoBtn.className = "icon-btn" + (row.photos && row.photos.length ? " has-photos" : "");
+      photoBtn.textContent = row.photos && row.photos.length ? String(row.photos.length) : "+";
+      photoBtn.title = "Add photo";
+      photoBtn.addEventListener("click", function () { openPhotoSheet(row); });
+
+      main.appendChild(input);
+      main.appendChild(photoBtn);
+      rowEl.appendChild(main);
+
+      if (row.photos && row.photos.length) {
+        var tr = document.createElement("div");
+        tr.className = "thumb-row";
+        row.photos.forEach(function (src, i) {
+          var th = document.createElement("div");
+          th.className = "thumb";
+          var im = document.createElement("img");
+          im.src = src;
+          im.addEventListener("click", function () { openLightbox(src); });
+          var x = document.createElement("button");
+          x.className = "remove-thumb";
+          x.type = "button";
+          x.textContent = "✕";
+          x.addEventListener("click", function (e) {
+            e.stopPropagation();
+            row.photos.splice(i, 1);
+            renderDefectRows();
+          });
+          th.appendChild(im); th.appendChild(x);
+          tr.appendChild(th);
+        });
+        rowEl.appendChild(tr);
+      }
+
+      c.appendChild(rowEl);
+    });
+  }
+
+  document.getElementById("addDefectBtn").addEventListener("click", function () {
+    draft.rows.push(blankDefectRow(false));
+    renderDefectRows();
+  });
+
+  document.getElementById("truckSelect").addEventListener("change", function (e) { draft.truckId = e.target.value; });
+  document.getElementById("inspectorInput").addEventListener("input", function (e) { draft.inspector = e.target.value; });
+  document.getElementById("odometerInput").addEventListener("input", function (e) { draft.odometer = e.target.value; });
+  document.getElementById("dateInput").addEventListener("change", function (e) {
+    var d = new Date(e.target.value);
+    if (!isNaN(d)) draft.date = d.toISOString();
+  });
+  document.getElementById("conditionOpts").addEventListener("click", function (e) {
+    var el = e.target.closest(".cond");
+    if (!el) return;
+    draft.condition = el.dataset.cond;
+    renderConditionOpts();
+  });
+
+  document.getElementById("saveReportBtn").addEventListener("click", function () {
+    var truck = getTruck(draft.truckId);
+    var inspectorEl = document.getElementById("inspectorInput");
+    if (!truck) { showToast("Select a truck first."); return; }
+    if (!draft.inspector.trim()) {
+      inspectorEl.classList.add("invalid");
+      inspectorEl.focus();
+      showToast("Enter the inspector name.");
+      return;
+    }
+    inspectorEl.classList.remove("invalid");
+
+    var defects = cleanedDefects();
+    // Condition defaults to the honest reading of the form if the inspector left it
+    // on Satisfactory while logging defects.
+    var condition = draft.condition;
+    if (condition === "green" && defects.length) condition = "yellow";
+
+    var record = {
+      id: uid(), kind: "inspection", date: draft.date,
+      inspector: draft.inspector.trim(), odometer: draft.odometer,
+      inspectorUser: (currentUser() ? currentUser().username : ""),
+      condition: condition, defects: defects
+    };
+
+    truck.status = condition;
+    truck.defects = condition === "green" ? [] : defects;
+    truck.inspector = record.inspector;
+    truck.odometer = record.odometer;
+    truck.lastInspected = record.date;
+    truck.history.unshift(record);
+    if (truck.history.length > MAX_HISTORY) truck.history.length = MAX_HISTORY;
+
+    saveState();
+    var keepTruck = truck.id;
+    resetDraft(keepTruck);
+
+    showToast(truck.name + " — report submitted (" + statusShort(condition).toLowerCase() + ")");
+    switchView("dashboard");
+  });
+
+  // ===================== VIEW 2: DASHBOARD =====================
+  function renderSummary() {
+    var counts = { green: 0, yellow: 0, red: 0 };
+    state.trucks.forEach(function (t) { counts[t.status] = (counts[t.status] || 0) + 1; });
+    var el = document.getElementById("summary");
+    el.innerHTML =
+      '<div class="stat green"><div class="n">' + counts.green + '</div><div class="l">Good to go</div></div>' +
+      '<div class="stat yellow"><div class="n">' + counts.yellow + '</div><div class="l">Defects</div></div>' +
+      '<div class="stat red"><div class="n">' + counts.red + '</div><div class="l">Out of svc</div></div>';
+  }
+
+  function renderDashboard() {
+    renderSummary();
+    document.querySelectorAll("#filters .chip").forEach(function (c) {
+      c.classList.toggle("active", c.dataset.filter === dashboardFilter);
+    });
+
+    var list = document.getElementById("truckList");
+    list.innerHTML = "";
+
+    var shown = state.trucks.filter(function (t) {
+      return dashboardFilter === "all" || t.status === dashboardFilter;
+    });
+
+    if (!shown.length) {
+      var e = document.createElement("div");
+      e.className = "empty";
+      e.textContent = "No trucks in this category.";
+      list.appendChild(e);
+      return;
+    }
+
+    shown.forEach(function (t) {
+      var card = document.createElement("div");
+      card.className = "truck-card " + (t.status === "red" ? "oos" : t.status === "yellow" ? "defect" : "ok");
+
+      var bubble = document.createElement("div");
+      bubble.className = "bubble " + t.status;
+
+      var info = document.createElement("div");
+      info.className = "truck-info";
+
+      var nameRow = document.createElement("div");
+      nameRow.className = "truck-name-row";
+      var name = document.createElement("span");
+      name.className = "truck-name";
+      name.textContent = t.name;
+      nameRow.appendChild(name);
+      if (t.defects.length) {
+        var dc = document.createElement("span");
+        dc.className = "defect-count";
+        dc.textContent = t.defects.length + (t.defects.length === 1 ? " defect" : " defects");
+        nameRow.appendChild(dc);
+      }
+
+      var label = document.createElement("div");
+      label.className = "status-label " + t.status;
+      label.textContent = statusLabel(t.status);
+
+      var meta = document.createElement("div");
+      meta.className = "truck-meta";
+      meta.textContent = t.lastInspected
+        ? ("Inspected " + fmtDate(t.lastInspected) + (t.odometer !== "" ? " · " + fmtMiles(t.odometer) : ""))
+        : "No inspection on file";
+
+      var insRow = document.createElement("div");
+      insRow.className = "inspector-row";
+      var insInput = document.createElement("input");
+      insInput.type = "text";
+      insInput.placeholder = "Inspector name";
+      insInput.value = t.inspector || "";
+      insInput.addEventListener("click", function (e) { e.stopPropagation(); });
+      insInput.addEventListener("input", function () { t.inspector = insInput.value; saveState(); });
+      insRow.appendChild(insInput);
+
+      info.appendChild(nameRow);
+      info.appendChild(label);
+      info.appendChild(meta);
+      info.appendChild(insRow);
+
+      var chev = document.createElement("div");
+      chev.className = "chevron";
+      chev.textContent = "›";
+
+      card.appendChild(bubble);
+      card.appendChild(info);
+      card.appendChild(chev);
+      card.addEventListener("click", function () {
+        activeDetailTruckId = t.id;
+        switchView("detail");
+      });
+      list.appendChild(card);
+    });
+  }
+
+  document.getElementById("filters").addEventListener("click", function (e) {
+    var chip = e.target.closest(".chip");
+    if (!chip) return;
+    dashboardFilter = chip.dataset.filter;
+    renderDashboard();
+  });
+
+  // ===================== VIEW 3: DETAIL =====================
+  function renderDetail() {
+    var t = getTruck(activeDetailTruckId);
+    if (!t) { switchView("dashboard"); return; }
+
+    document.getElementById("detailName").textContent = t.name;
+
+    var pw = document.getElementById("detailStatusPill");
+    pw.innerHTML = '<span class="status-pill ' + t.status + '">' + esc(statusLabel(t.status)) + '</span>';
+
+    document.getElementById("detailInfo").innerHTML =
+      kv("Date", fmtDateTime(t.lastInspected)) +
+      kv("Inspector", t.inspector || "—") +
+      kv("Odometer", fmtMiles(t.odometer));
+
+    var dEl = document.getElementById("detailDefects");
+    dEl.innerHTML = "";
+    if (!t.defects.length) {
+      dEl.innerHTML = '<div class="empty">No open defects on this vehicle.</div>';
+    } else {
+      t.defects.forEach(function (d) {
+        var dv = document.createElement("div");
+        dv.className = "defect-view";
+        var html = '<span class="defect-cat">' + esc(d.category || "Other") + '</span>' +
+                   '<div class="txt">' + esc(d.text) + '</div>';
+        dv.innerHTML = html;
+        if (d.photos && d.photos.length) {
+          var ph = document.createElement("div");
+          ph.className = "photos";
+          d.photos.forEach(function (src) {
+            var im = document.createElement("img");
+            im.src = src;
+            im.addEventListener("click", function () { openLightbox(src); });
+            ph.appendChild(im);
+          });
+          dv.appendChild(ph);
+        }
+        dEl.appendChild(dv);
+      });
+    }
+
+    renderHistory(t);
+  }
+
+  function kv(k, v) {
+    return '<div class="kv"><span class="k">' + esc(k) + '</span><span class="v">' + esc(v) + '</span></div>';
+  }
+
+  function renderHistory(t) {
+    var h = document.getElementById("detailHistory");
+    h.innerHTML = "";
+    if (!t.history.length) {
+      h.innerHTML = '<div class="empty">No inspection history yet.</div>';
+      return;
+    }
+    t.history.forEach(function (ev) {
+      var item = document.createElement("div");
+      item.className = "hist-item";
+
+      // The mark reflects the OUTCOME, not the event type: a repair that was not
+      // completed leaves the truck out of service, so it stays red.
+      var iconCls, iconTxt, alert = false, title, sub;
+
+      if (ev.kind === "repair") {
+        if (ev.returnedToService) {
+          iconCls = "repair"; iconTxt = "✓";
+          title = "Repairs completed — returned to service";
+        } else {
+          iconCls = "oos"; iconTxt = "✕"; alert = true;
+          title = "Repairs not completed — held out of service";
+        }
+        sub = fmtDateTime(ev.date) + " · " + (ev.by || "unknown") +
+              (ev.signedOffBy && ev.signedOffBy !== ev.by ? " · signed off by " + ev.signedOffBy : "");
+      } else {
+        iconCls = ev.condition === "red" ? "oos" : "inspection";
+        iconTxt = ev.condition === "red" ? "✕" : "I";
+        alert = ev.condition === "red";
+        title = "Inspection — " + statusShort(ev.condition);
+        sub = fmtDateTime(ev.date) + " · " + (ev.inspector || "unknown") +
+              (ev.odometer !== "" && ev.odometer != null ? " · " + fmtMiles(ev.odometer) : "");
+      }
+
+      var head = document.createElement("div");
+      head.className = "hist-head";
+      head.innerHTML =
+        '<div class="hist-icon ' + iconCls + '">' + iconTxt + '</div>' +
+        '<div class="hist-main"><div class="hist-title' + (alert ? " alert" : "") + '">' + esc(title) + '</div>' +
+        '<div class="hist-sub">' + esc(sub) + '</div></div>' +
+        '<div class="chevron">›</div>';
+
+      var body = document.createElement("div");
+      body.className = "hist-body";
+      if (ev.kind === "repair") {
+        body.innerHTML = (ev.note ? esc(ev.note) : "<em>No notes recorded.</em>");
+      } else if (ev.defects && ev.defects.length) {
+        var lis = ev.defects.map(function (d) {
+          return "<li><strong>" + esc(d.category) + ":</strong> " + esc(d.text) +
+                 (d.photos && d.photos.length ? " (" + d.photos.length + " photo" + (d.photos.length > 1 ? "s" : "") + ")" : "") + "</li>";
+        }).join("");
+        body.innerHTML = "<ul>" + lis + "</ul>" +
+          (ev.photosPruned ? "<div class='hint'>Photos from this record were removed to free storage.</div>" : "");
+      } else {
+        body.innerHTML = "<em>No defects reported.</em>";
+      }
+
+      head.addEventListener("click", function () { item.classList.toggle("open"); });
+      item.appendChild(head);
+      item.appendChild(body);
+      h.appendChild(item);
+    });
+  }
+
+  // ---------- repair sign-off ----------
+  var repairModal = document.getElementById("repairModal");
+  var repairMode = "fixed";
+
+  function openRepairModal(mode) {
+    if (!isAdmin()) { showToast("Only an administrator can close out repairs."); return; }
+    repairMode = mode;
+    var fixed = mode === "fixed";
+    document.getElementById("repairTitle").textContent = fixed ? "Repairs Completed" : "Repairs Not Completed";
+    document.getElementById("repairSub").textContent = fixed
+      ? "Record who completed the work before returning this truck to service."
+      : "This truck will be marked out of service until the work is done.";
+    document.getElementById("repairConfirm").className = "btn " + (fixed ? "btn-green" : "btn-red");
+    document.getElementById("repairConfirm").textContent = fixed ? "Return to Service" : "Hold Out of Service";
+    document.getElementById("repairBy").value = "";
+    document.getElementById("repairNote").value = "";
+    repairModal.classList.add("show");
+    setTimeout(function () { document.getElementById("repairBy").focus(); }, 60);
+  }
+  function closeRepairModal() { repairModal.classList.remove("show"); }
+
+  document.getElementById("fixedBtn").addEventListener("click", function () { openRepairModal("fixed"); });
+  document.getElementById("notDoneBtn").addEventListener("click", function () { openRepairModal("notdone"); });
+  document.getElementById("repairCancel").addEventListener("click", closeRepairModal);
+  repairModal.addEventListener("click", function (e) { if (e.target === repairModal) closeRepairModal(); });
+
+  document.getElementById("repairConfirm").addEventListener("click", function () {
+    var t = getTruck(activeDetailTruckId);
+    if (!t) return;
+    if (!isAdmin()) { showToast("Only an administrator can close out repairs."); closeRepairModal(); return; }
+    var byEl = document.getElementById("repairBy");
+    if (!byEl.value.trim()) {
+      byEl.classList.add("invalid");
+      byEl.focus();
+      showToast("Enter who handled the repair.");
+      return;
+    }
+    byEl.classList.remove("invalid");
+
+    var fixed = repairMode === "fixed";
+    var ev = {
+      id: uid(), kind: "repair", date: new Date().toISOString(),
+      by: byEl.value.trim(), note: document.getElementById("repairNote").value.trim(),
+      returnedToService: fixed,
+      signedOffBy: (currentUser() ? currentUser().name : ""),
+      clearedDefects: t.defects.map(function (d) { return { category: d.category, text: d.text }; })
+    };
+    t.history.unshift(ev);
+    if (t.history.length > MAX_HISTORY) t.history.length = MAX_HISTORY;
+
+    if (fixed) { t.status = "green"; t.defects = []; }
+    else { t.status = "red"; }
+
+    saveState();
+    closeRepairModal();
+    showToast(fixed ? (t.name + " returned to service") : (t.name + " held out of service"));
+    switchView("dashboard");
+  });
+
+  // ===================== SETTINGS =====================
+  var settingsModal = document.getElementById("settingsModal");
+  document.getElementById("gearBtn").addEventListener("click", function () {
+    if (!isAdmin()) return;
+    document.getElementById("companyInput").value = state.company;
+    document.getElementById("fleetInput").value = state.trucks.map(function (t) { return t.name; }).join("\n");
+    settingsModal.classList.add("show");
+  });
+  document.getElementById("settingsCancel").addEventListener("click", function () { settingsModal.classList.remove("show"); });
+  settingsModal.addEventListener("click", function (e) { if (e.target === settingsModal) settingsModal.classList.remove("show"); });
+
+  document.getElementById("settingsSave").addEventListener("click", function () {
+    if (!isAdmin()) return;
+    var co = document.getElementById("companyInput").value.trim();
+    state.company = co || DEFAULT_COMPANY;
+
+    var names = document.getElementById("fleetInput").value
+      .split("\n").map(function (s) { return s.trim(); }).filter(Boolean);
+
+    if (names.length) {
+      var byName = {};
+      state.trucks.forEach(function (t) { byName[t.name.toLowerCase()] = t; });
+      state.trucks = names.map(function (n, i) {
+        var existing = byName[n.toLowerCase()];
+        if (existing) { existing.name = n; return existing; }
+        return newTruck("t" + uid(), n);
+      });
+      if (!getTruck(draft.truckId)) draft.truckId = state.trucks[0].id;
+      if (!getTruck(activeDetailTruckId)) activeDetailTruckId = null;
+    }
+
+    saveState();
+    applyBranding();
+    settingsModal.classList.remove("show");
+    renderTruckOptions();
+    renderDashboard();
+    showToast("Settings saved");
+  });
+
+  function applyBranding() {
+    document.getElementById("brandName").textContent = state.company;
+    document.getElementById("brandMark").textContent = initials(state.company);
+    document.getElementById("authMark").textContent = initials(state.company);
+    document.getElementById("authCo").textContent = state.company;
+    document.title = state.company + " — Vehicle Inspection";
+  }
+
+  // ===================== REPORTS (print / PDF) =====================
+  function prKv(k, v) {
+    return '<div class="pr-kv"><span class="k">' + esc(k) + '</span><span class="v">' + esc(v) + '</span></div>';
+  }
+
+  function reportHead(title) {
+    return '<div class="pr-head"><div class="pr-co">' + esc(state.company) + '</div>' +
+           '<div class="pr-title">' + esc(title) + '</div></div>';
+  }
+
+  function truckReportHTML(t) {
+    var html = reportHead("Vehicle Inspection Report");
+
+    html += '<div class="pr-sec"><h3>Vehicle</h3><div class="pr-grid">' +
+      prKv("Unit", t.name) +
+      prKv("Inspector", t.inspector || "—") +
+      prKv("Odometer", fmtMiles(t.odometer)) +
+      prKv("Inspected", fmtDateTime(t.lastInspected)) +
+      '</div><div style="margin-top:9px"><span class="pr-status">' + esc(statusLabel(t.status).toUpperCase()) + '</span></div></div>';
+
+    html += '<div class="pr-sec"><h3>Defects</h3>';
+    if (!t.defects.length) {
+      html += '<p style="margin:0">No defects recorded. Vehicle reported satisfactory.</p>';
+    } else {
+      html += '<table class="pr-tbl"><thead><tr><th style="width:6%">#</th><th style="width:24%">Category</th><th style="width:56%">Description</th><th style="width:14%">Pics</th></tr></thead><tbody>';
+      t.defects.forEach(function (d, i) {
+        html += '<tr><td>' + (i + 1) + '</td><td>' + esc(d.category) + '</td><td>' + esc(d.text) + '</td><td>' +
+                ((d.photos && d.photos.length) || 0) + '</td></tr>';
+      });
+      html += '</tbody></table>';
+      var withPhotos = t.defects.filter(function (d) { return d.photos && d.photos.length; });
+      if (withPhotos.length) {
+        html += '<div style="margin-top:10px"><h3>Photo Evidence</h3>';
+        withPhotos.forEach(function (d, i) {
+          html += '<div style="margin-bottom:8px"><strong>' + esc(d.category) + ' — ' + esc(d.text) + '</strong>' +
+                  '<div class="pr-photos">' +
+                  d.photos.map(function (p) { return '<img src="' + p + '">'; }).join("") +
+                  '</div></div>';
+        });
+        html += '</div>';
+      }
+    }
+    html += '</div>';
+
+    var lastRepair = t.history.filter(function (h) { return h.kind === "repair"; })[0];
+    if (lastRepair) {
+      html += '<div class="pr-sec"><h3>Repair Record</h3><div class="pr-grid">' +
+        prKv("Status", lastRepair.returnedToService ? "Repairs completed" : "Repairs not completed") +
+        prKv("Handled by", lastRepair.by || "—") +
+        prKv("Date", fmtDateTime(lastRepair.date)) +
+        '</div>' + (lastRepair.note ? '<p style="margin:6px 0 0">' + esc(lastRepair.note) + '</p>' : '') + '</div>';
+    }
+
+    if (t.history.length > 1) {
+      html += '<div class="pr-sec" style="margin-top:18px"><h3>History</h3><table class="pr-tbl"><thead><tr>' +
+        '<th style="width:22%">Date</th><th style="width:22%">Event</th><th style="width:56%">Detail</th></tr></thead><tbody>';
+      t.history.slice(0, 12).forEach(function (ev) {
+        var evName = ev.kind === "repair"
+          ? (ev.returnedToService ? "Repair — cleared" : "Repair — held")
+          : "Inspection";
+        var detail = ev.kind === "repair"
+          ? ((ev.by || "—") + (ev.note ? " — " + ev.note : ""))
+          : (statusShort(ev.condition) + " — " + (ev.inspector || "—") +
+             (ev.defects && ev.defects.length ? " (" + ev.defects.length + " defect" + (ev.defects.length > 1 ? "s" : "") + ")" : ""));
+        html += '<tr><td>' + esc(fmtDate(ev.date)) + '</td><td>' + esc(evName) + '</td><td>' + esc(detail) + '</td></tr>';
+      });
+      html += '</tbody></table></div>';
+    }
+
+    html += '<div class="pr-foot">' + esc(state.company) + ' · Vehicle Inspection Report · ' +
+            esc(t.name) + ' · Generated ' + esc(fmtDateTime(new Date().toISOString())) + '</div>';
+    return html;
+  }
+
+  function fleetReportHTML() {
+    var html = reportHead("Fleet Status Report");
+    var counts = { green: 0, yellow: 0, red: 0 };
+    state.trucks.forEach(function (t) { counts[t.status]++; });
+
+    html += '<div class="pr-sec"><h3>Summary</h3><div class="pr-grid">' +
+      prKv("Total units", state.trucks.length) +
+      prKv("Good to go", counts.green) +
+      prKv("Defects — repairs needed", counts.yellow) +
+      prKv("Out of service", counts.red) +
+      '</div></div>';
+
+    html += '<div class="pr-sec"><h3>Fleet Detail</h3><table class="pr-tbl"><thead><tr>' +
+      '<th style="width:17%">Unit</th><th style="width:17%">Status</th><th style="width:9%">Open</th>' +
+      '<th style="width:16%">Odometer</th><th style="width:18%">Last insp.</th><th style="width:23%">Inspector</th>' +
+      '</tr></thead><tbody>';
+    state.trucks.forEach(function (t) {
+      html += '<tr><td><strong>' + esc(t.name) + '</strong></td><td>' + esc(statusShort(t.status)) + '</td><td>' +
+        t.defects.length + '</td><td>' + esc(fmtMiles(t.odometer)) + '</td><td>' +
+        esc(t.lastInspected ? fmtDate(t.lastInspected) : "—") + '</td><td>' + esc(t.inspector || "—") + '</td></tr>';
+    });
+    html += '</tbody></table></div>';
+
+    var flagged = state.trucks.filter(function (t) { return t.defects.length; });
+    if (flagged.length) {
+      html += '<div class="pr-sec"><h3>Open Defects</h3><table class="pr-tbl"><thead><tr>' +
+        '<th style="width:20%">Unit</th><th style="width:26%">Category</th><th style="width:54%">Description</th></tr></thead><tbody>';
+      flagged.forEach(function (t) {
+        t.defects.forEach(function (d, i) {
+          html += '<tr><td>' + (i === 0 ? esc(t.name) : "") + '</td><td>' + esc(d.category) + '</td><td>' + esc(d.text) + '</td></tr>';
+        });
+      });
+      html += '</tbody></table></div>';
+    }
+
+    html += '<div class="pr-foot">' + esc(state.company) + ' · Fleet Status Report · Generated ' +
+            esc(fmtDateTime(new Date().toISOString())) + '</div>';
+    return html;
+  }
+
+  function printHTML(html) {
+    var area = document.getElementById("printArea");
+    area.innerHTML = html;
+    setTimeout(function () { window.print(); }, 120);
+  }
+
+  document.getElementById("printTruckBtn").addEventListener("click", function () {
+    var t = getTruck(activeDetailTruckId);
+    if (t) printHTML(truckReportHTML(t));
+  });
+  document.getElementById("printFleetBtn").addEventListener("click", function () {
+    printHTML(fleetReportHTML());
+  });
+
+  // ---------- email / shareable summary ----------
+  var emailModal = document.getElementById("emailModal");
+
+  function summaryText(t) {
+    var lines = [
+      state.company + " — Vehicle Inspection Summary",
+      "",
+      "Unit:       " + t.name,
+      "Status:     " + statusLabel(t.status),
+      "Inspected:  " + fmtDateTime(t.lastInspected),
+      "Inspector:  " + (t.inspector || "—"),
+      "Odometer:   " + fmtMiles(t.odometer),
+      ""
+    ];
+    if (t.defects.length) {
+      lines.push("OPEN DEFECTS (" + t.defects.length + ")");
+      t.defects.forEach(function (d, i) {
+        lines.push("  " + (i + 1) + ". " + d.category + " — " + d.text +
+          (d.photos && d.photos.length ? "  [" + d.photos.length + " photo" + (d.photos.length > 1 ? "s" : "") + " on file]" : ""));
+      });
+    } else {
+      lines.push("No open defects.");
+    }
+
+    var lastRepair = t.history.filter(function (h) { return h.kind === "repair"; })[0];
+    if (lastRepair) {
+      lines.push("", "LAST REPAIR ACTION",
+        "  " + (lastRepair.returnedToService ? "Repairs completed — returned to service" : "Repairs NOT completed — held out of service"),
+        "  " + (lastRepair.by || "—") + " · " + fmtDateTime(lastRepair.date));
+      if (lastRepair.note) lines.push("  " + lastRepair.note);
+    }
+    return lines.join("\n");
+  }
+
+  function summarySubject(t) {
+    return state.company + " — " + t.name + " inspection (" + statusShort(t.status) + ")";
+  }
+
+  document.getElementById("emailTruckBtn").addEventListener("click", function () {
+    var t = getTruck(activeDetailTruckId);
+    if (!t) return;
+    document.getElementById("emailText").value = summaryText(t);
+    emailModal.classList.add("show");
+  });
+
+  document.getElementById("emailClose").addEventListener("click", function () { emailModal.classList.remove("show"); });
+  emailModal.addEventListener("click", function (e) { if (e.target === emailModal) emailModal.classList.remove("show"); });
+
+  document.getElementById("emailCopy").addEventListener("click", function () {
+    var ta = document.getElementById("emailText");
+    var done = function () { showToast("Summary copied — paste it into your email."); };
+    var fallback = function () {
+      try {
+        ta.removeAttribute("readonly");
+        ta.select();
+        ta.setSelectionRange(0, 99999);
+        var ok = document.execCommand("copy");
+        ta.setAttribute("readonly", "readonly");
+        ok ? done() : showToast("Couldn't copy — select the text and copy manually.");
+      } catch (e) {
+        showToast("Couldn't copy — select the text and copy manually.");
+      }
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(ta.value).then(done).catch(fallback);
+    } else {
+      fallback();
+    }
+  });
+
+  document.getElementById("emailOpen").addEventListener("click", function () {
+    var t = getTruck(activeDetailTruckId);
+    if (!t) return;
+    var url = "mailto:?subject=" + encodeURIComponent(summarySubject(t)) +
+              "&body=" + encodeURIComponent(summaryText(t));
+    var win = window.open(url, "_blank");
+    if (!win) {
+      try { window.location.href = url; }
+      catch (e) { showToast("No mail app is set up — use Copy Summary instead."); }
+    }
+  });
+
+  // clear invalid styling on typing
+  ["inspectorInput", "repairBy"].forEach(function (id) {
+    document.getElementById(id).addEventListener("input", function (e) { e.target.classList.remove("invalid"); });
+  });
+
+  // ===================== INIT =====================
+  state = loadState();
+  applyBranding();
+  saveState();
+  resetDraft();
+  renderInspect();
+
+  if (!state.users.length) {
+    showAuth("setup");              // first run — create the administrator
+  } else if (restoreSession()) {
+    startApp();                     // still signed in on this device
+  } else {
+    showAuth("login");
+  }
+})();
+</script>
+</body>
+</html>
